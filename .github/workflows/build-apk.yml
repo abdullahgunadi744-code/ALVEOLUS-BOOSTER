@@ -1,4 +1,4 @@
-name: Build FutureGameBooster APK
+name: Build FutureGameBooster FINAL MEDIA
 
 on:
   workflow_dispatch:
@@ -13,34 +13,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Prepare exact project ZIP
-        shell: bash
+      - name: Find FINAL MEDIA ZIP
         run: |
           set -e
-          ZIP="./FutureGameBooster_BoosterAI_v3.zip"
+
+          ZIP="./FutureGameBooster_FINAL_FIXED_MEDIA.zip"
 
           if [ ! -f "$ZIP" ]; then
-            echo "ERROR: $ZIP tidak ditemukan."
-            echo "ZIP yang ada di root:"
-            find . -maxdepth 1 -type f -name "*.zip" -print
+            echo "ERROR: ZIP tidak ditemukan:"
+            ls -la
             exit 1
           fi
 
-          # Bersihkan project Android lama agar tidak tercampur.
-          rm -rf app
-          rm -f settings.gradle settings.gradle.kts build.gradle build.gradle.kts gradle.properties
-          rm -rf gradle
+          echo "ZIP ditemukan: $ZIP"
 
-          mkdir project
-          unzip -q "$ZIP" -d project
+      - name: Extract Android project
+        run: |
+          set -e
 
-          # Pastikan isi ZIP memang project yang diharapkan.
-          test -f project/settings.gradle.kts
-          test -f project/app/build.gradle.kts
-          test -f project/app/src/main/AndroidManifest.xml
+          rm -rf extracted
+          mkdir extracted
 
-          cp -a project/. .
-          rm -rf project
+          unzip -q "./FutureGameBooster_FINAL_FIXED_MEDIA.zip" -d extracted
+
+          cp -a extracted/. .
+          rm -rf extracted
+
+          echo "=== PROJECT ==="
+          ls -la
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -51,24 +51,28 @@ jobs:
       - name: Set up Gradle 8.11.1
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Generate Gradle wrapper 8.11.1
-        run: gradle wrapper --gradle-version 8.11.1 --distribution-type bin
-
-      - name: Verify project
+      - name: Generate Gradle Wrapper
         run: |
-          echo "=== settings.gradle.kts ==="
-          sed -n '1,120p' settings.gradle.kts
-          echo "=== app/build.gradle.kts ==="
-          sed -n '1,160p' app/build.gradle.kts
-          echo "=== MainActivity.kt ==="
-          sed -n '1,260p' app/src/main/java/com/futuregamebooster/boosterai/MainActivity.kt
+          gradle wrapper \
+            --gradle-version 8.11.1 \
+            --distribution-type bin
+
+      - name: Verify Android project
+        run: |
+          test -f settings.gradle.kts
+          test -f app/build.gradle.kts
+          test -f app/src/main/AndroidManifest.xml
+
+          echo "Android project OK"
 
       - name: Build APK
-        run: ./gradlew clean assembleDebug --stacktrace
+        run: |
+          chmod +x gradlew
+          ./gradlew clean assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: FutureGameBooster-APK
+          name: FutureGameBooster-FINAL-MEDIA-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
